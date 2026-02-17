@@ -1,0 +1,45 @@
+# =========================
+# Node Dependencies
+# =========================
+node_modules/
+package-lock.json
+npm-debug.log*
+yarn.lock
+
+# =========================
+# Environment Variables
+# =========================
+.env
+.env.local
+.env.*.local
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+
+# =========================
+# Temporary Files
+# =========================
+temp_audio.wav
+temp_image.jpg
+temp_frame.jpg
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# IDE / Editor
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# Build (if ever added)
+# =========================
+dist/
+build/
