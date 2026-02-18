@@ -34,6 +34,6 @@ exports.chat = async (req, res) => {
 
   return res.json({
     success: true,
-    answer,
+    data: { answer },
   });
 };

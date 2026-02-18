@@ -27,9 +27,12 @@ exports.register = async (req, res) => {
 
     const token = generateToken(user);
 
-    res.json({ success: true, token });
+    return res.json({
+      success: true,
+      data: { token },
+    });
   } catch (err) {
-    res.status(500).json({ success: false, error: "Registration failed" });
+    return res.status(500).json({ success: false, error: "Registration failed" });
   }
 };
 
@@ -52,9 +55,12 @@ exports.login = async (req, res) => {
 
     const token = generateToken(user);
 
-    res.json({ success: true, token });
+    return res.json({
+      success: true,
+      data: { token },
+    });
   } catch (err) {
-    res.status(500).json({ success: false, error: "Login failed" });
+    return res.status(500).json({ success: false, error: "Login failed" });
   }
 };
 
@@ -83,9 +89,12 @@ exports.googleAuth = async (req, res) => {
 
     const jwtToken = generateToken(user);
 
-    res.json({ success: true, token: jwtToken });
+    return res.json({
+      success: true,
+      data: { token: jwtToken },
+    });
   } catch (err) {
-    res
+    return res
       .status(401)
       .json({ success: false, error: "Google authentication failed" });
   }
@@ -95,8 +104,11 @@ exports.googleAuth = async (req, res) => {
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
-    res.json({ success: true, user });
+    return res.json({
+      success: true,
+      data: { user },
+    });
   } catch (err) {
-    res.status(500).json({ success: false, error: "Failed to fetch user" });
+    return res.status(500).json({ success: false, error: "Failed to fetch user" });
   }
 };

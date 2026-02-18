@@ -25,7 +25,13 @@ exports.protect = (req, res, next) => {
   if (!authHeader)
     return res.status(401).json({ success: false, error: "No token provided" });
 
-  const token = authHeader.split(" ")[1];
+  const [scheme, token] = authHeader.split(" ");
+  if (scheme !== "Bearer" || !token) {
+    return res.status(401).json({
+      success: false,
+      error: "Authorization header must be in Bearer token format",
+    });
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -37,10 +43,12 @@ exports.protect = (req, res, next) => {
 };
 
 exports.requireAdmin = (req, res, next) => {
-  if (req.user.role !== "admin")
-    return res
-      .status(403)
-      .json({ success: false, error: "Admin access required" });
-
+  if (req.user.role !== "admin") {
+    return res.status(403).json({
+      success: false,
+      error: "Admin access required",
+    });
+  }
   next();
 };
+

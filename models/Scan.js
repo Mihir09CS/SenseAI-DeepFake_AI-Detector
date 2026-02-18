@@ -10,4 +10,7 @@ const ScanSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
+ScanSchema.index({ userId: 1, createdAt: -1 });
+ScanSchema.index({ mediaType: 1, riskLevel: 1 });
+
 module.exports = mongoose.model("Scan", ScanSchema);
