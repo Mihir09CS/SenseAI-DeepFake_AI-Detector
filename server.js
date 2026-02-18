@@ -15,9 +15,14 @@ const corsOrigins = (process.env.FRONTEND_URL || "")
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+// cors
 app.use(
   cors({
-    origin: corsOrigins.length > 0 ? corsOrigins : true,
+    // origin: "https://devscribe-a.netlify.app",
+    origin: corsOrigins.length ? corsOrigins : "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   }),
 );
 app.use(express.json());
