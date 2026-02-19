@@ -14,7 +14,7 @@ async function sendResetPasswordEmail({ toEmail, toName, resetUrl }) {
   ensureMailConfig();
 
   const senderEmail = process.env.SENDER_EMAIL;
-  const appName = process.env.APP_NAME || "SentinelAI";
+  const appName = process.env.APP_NAME || "TrustLens";
 
   const payload = {
     sender: {

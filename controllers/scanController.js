@@ -61,9 +61,17 @@ exports.scanMedia = async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(500).json({
+    const message = error?.message || "Failed to scan URL";
+    const lowered = message.toLowerCase();
+
+    const isClientError =
+      /unsupported media type|indirect link|valid http\/https url|invalid google token|file too large|fetch timed out|failed to fetch media url|url/i.test(
+        lowered,
+      ) && !lowered.includes("service unavailable");
+
+    return res.status(isClientError ? 400 : 500).json({
       success: false,
-      error: error.message,
+      error: message,
     });
   }
 };
