@@ -6,6 +6,8 @@ const {
   bulkScan,
   getScanHistory,
   getScanSummary,
+  createReportProof,
+  getReportProofs,
 } = require("../controllers/scanController");
 const { protect } = require("../middlewares/authMiddleware");
 
@@ -20,6 +22,8 @@ const upload = multer({
 router.post("/", protect, scanMedia);
 router.post("/file", protect, upload.single("file"), scanMediaFile);
 router.post("/bulk", protect, bulkScan);
+router.post("/proof", protect, createReportProof);
+router.get("/proofs", protect, getReportProofs);
 router.get("/history", protect, getScanHistory);
 router.get("/summary", protect, getScanSummary);
 

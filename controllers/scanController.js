@@ -1,7 +1,9 @@
 
 
 const Scan = require("../models/Scan");
+const ReportProof = require("../models/ReportProof");
 const mongoose = require("mongoose");
+const crypto = require("crypto");
 const { analyzeMedia, analyzeMediaFile } = require("../services/aiService");
 const { resolveScanUrl } = require("../utils/urlResolver");
 
@@ -55,6 +57,7 @@ exports.scanMedia = async (req, res) => {
     return res.json({
       success: true,
       data: {
+        scanId: scan._id,
         ...buildScanPayload(aiResult, scan.createdAt),
         sourceUrl: mediaUrl,
         analyzedUrl: resolvedMediaUrl,
@@ -97,7 +100,10 @@ exports.scanMediaFile = async (req, res) => {
 
     return res.json({
       success: true,
-      data: buildScanPayload(aiResult, scan.createdAt),
+      data: {
+        scanId: scan._id,
+        ...buildScanPayload(aiResult, scan.createdAt),
+      },
     });
   } catch (error) {
     const message = error?.message || "Failed to scan URL";
@@ -137,7 +143,7 @@ exports.bulkScan = async (req, res) => {
         const resolvedMediaUrl = await resolveScanUrl(url);
         const aiResult = await analyzeMedia(resolvedMediaUrl);
 
-        await Scan.create({
+        const savedScan = await Scan.create({
           userId: req.user.id,
           mediaUrl: url,
           mediaType: aiResult.mediaType,
@@ -147,6 +153,7 @@ exports.bulkScan = async (req, res) => {
         });
 
         return {
+          scanId: savedScan._id,
           url,
           analyzedUrl: resolvedMediaUrl,
           status: "success",
@@ -308,6 +315,118 @@ exports.getScanSummary = async (req, res) => {
     return res.status(500).json({
       success: false,
       error: "Failed to fetch scan summary",
+    });
+  }
+};
+
+exports.createReportProof = async (req, res) => {
+  const { scanId, reportType, summary } = req.body || {};
+  const allowedTypes = ["single", "bulk", "history"];
+  if (!allowedTypes.includes(reportType)) {
+    return res.status(400).json({
+      success: false,
+      error: "Valid reportType is required",
+    });
+  }
+
+  try {
+    let linkedScanId = null;
+    if (scanId) {
+      if (!mongoose.Types.ObjectId.isValid(scanId)) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid scanId",
+        });
+      }
+
+      const ownedScan = await Scan.findOne({
+        _id: scanId,
+        userId: req.user.id,
+      }).select("_id");
+      if (!ownedScan) {
+        return res.status(404).json({
+          success: false,
+          error: "Scan not found",
+        });
+      }
+      linkedScanId = ownedScan._id;
+    }
+
+    const generatedAt = new Date().toISOString();
+    const hashPayload = JSON.stringify({
+      userId: req.user.id,
+      scanId: linkedScanId ? String(linkedScanId) : null,
+      reportType,
+      summary: summary || {},
+      generatedAt,
+    });
+    const contentHash = crypto
+      .createHash("sha256")
+      .update(hashPayload)
+      .digest("hex");
+
+    const proof = await ReportProof.create({
+      userId: req.user.id,
+      scanId: linkedScanId,
+      reportType,
+      contentHash,
+      summary: summary || {},
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        proofId: proof._id,
+        contentHash,
+        createdAt: proof.createdAt,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: "Failed to create report proof",
+    });
+  }
+};
+
+exports.getReportProofs = async (req, res) => {
+  try {
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 100);
+    const skip = (page - 1) * limit;
+    const reportType = (req.query.reportType || "").trim();
+
+    const query = { userId: req.user.id };
+    if (["single", "bulk", "history"].includes(reportType)) {
+      query.reportType = reportType;
+    }
+
+    const [rows, total] = await Promise.all([
+      ReportProof.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .select("scanId reportType contentHash summary createdAt")
+        .lean(),
+      ReportProof.countDocuments(query),
+    ]);
+
+    return res.json({
+      success: true,
+      data: {
+        proofs: rows,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.max(1, Math.ceil(total / limit)),
+        },
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: "Failed to fetch report proofs",
     });
   }
 };

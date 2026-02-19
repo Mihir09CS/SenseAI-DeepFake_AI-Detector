@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const Scan = require("../models/Scan");
+const ReportProof = require("../models/ReportProof");
 const bcrypt = require("bcryptjs");
 const generateToken = require("../utils/generateToken");
 
@@ -59,12 +60,14 @@ exports.getStats = async (req, res) => {
       highRisk,
       mediumRisk,
       lowRisk,
+      totalProofs,
     ] = await Promise.all([
       User.countDocuments(),
       Scan.countDocuments(),
       Scan.countDocuments({ riskLevel: "High" }),
       Scan.countDocuments({ riskLevel: "Medium" }),
       Scan.countDocuments({ riskLevel: "Low" }),
+      ReportProof.countDocuments(),
     ]);
 
     return res.json({
@@ -75,6 +78,7 @@ exports.getStats = async (req, res) => {
         highRisk,
         mediumRisk,
         lowRisk,
+        totalProofs,
       },
     });
   } catch (error) {
